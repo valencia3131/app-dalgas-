@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sihirli Akıllı PNG Yapıcı</title>
+    <title>Sihirli AI Arka Plan Sildirme (Gerçek PNG)</title>
     <style>
         :root {
             --bg: #000000;
@@ -61,7 +61,7 @@
         .main-container {
             position: absolute;
             top: 60px;
-            bottom: 250px;
+            bottom: 230px;
             left: 0;
             width: 100%;
             display: flex;
@@ -88,6 +88,34 @@
         .tiktok-upload-btn svg { width: 44px; height: 44px; fill: var(--text); }
         .tiktok-upload-btn span { font-size: 14px; font-weight: 600; color: var(--sub); }
 
+        /* Yükleniyor Ekranı */
+        .loading-screen {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 500;
+            background: rgba(0,0,0,0.6);
+            padding: 20px 28px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .loading-screen.active { display: flex; }
+
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         .editor-workspace {
             display: none;
             width: 100%;
@@ -98,7 +126,7 @@
         }
         .editor-workspace.active { display: flex; }
 
-        /* Gerçek Transparan Kareli Fon */
+        /* Gerçek Transparan Kareli PNG Fonu */
         .canvas-container {
             position: relative;
             max-width: 100%;
@@ -111,11 +139,12 @@
             background-position: 0 0, 0 10px, 10px -10px, -10px 0;
             background-color: #111;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
+            padding: 12px;
         }
 
-        canvas { display: block; max-width: 100%; max-height: 100%; }
+        canvas { display: block; max-width: 100%; max-height: 100%; background: transparent; }
 
         /* ===================== ALT KONTROL PANELİ ===================== */
         .bottom-panel {
@@ -123,7 +152,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 250px;
+            height: 230px;
             background: var(--panel-bg);
             border-top: 1px solid var(--border);
             padding: 16px;
@@ -145,7 +174,7 @@
             align-items: center;
             gap: 12px;
         }
-        .slider-group label { width: 100px; font-size: 13px; font-weight: 600; color: var(--sub); }
+        .slider-group label { width: 90px; font-size: 13px; font-weight: 600; color: var(--sub); }
         .slider-group input[type="range"] {
             flex: 1;
             height: 6px;
@@ -164,7 +193,7 @@
 
         .btn-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .magic-btn {
@@ -194,21 +223,46 @@
             font-weight: 800;
             cursor: pointer;
         }
-        .save-btn:disabled, .magic-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .oneclick-btn {
+            flex: 1;
+            background: linear-gradient(90deg, #06b6d4, #a855f7);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .save-btn:disabled, .magic-btn:disabled, .oneclick-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Demo banner */
+        .demo-banner {
+            position: fixed;
+            right: 16px;
+            bottom: 260px;
+            background: linear-gradient(90deg,#06b6d4,#a855f7);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            z-index: 1200;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
     </style>
 </head>
 <body>
 
-    <!-- ÜST BAR -->
     <div class="top-bar">
         <button class="nav-btn" id="undoBtn" onclick="undo()" disabled>↩️ Geri Al</button>
-        <div style="font-size: 14px; font-weight: 700; color: var(--sub)">AKILLI SİHİRLİ PNG</div>
+        <div style="font-size: 14px; font-weight: 700; color: var(--sub)">AI PNG STÜDYO PRO</div>
         <button class="nav-btn" id="redoBtn" onclick="redo()" disabled>İleri Al ↪️</button>
     </div>
 
-    <!-- ORTA ALAN -->
     <div class="main-container">
-        <!-- TikTok Tarzı Buton -->
         <label class="tiktok-upload-btn" id="uploadPanel" for="fileInput">
             <svg viewBox="0 0 24 24">
                 <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
@@ -217,20 +271,23 @@
         </label>
         <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="loadImage(event)">
 
-        <!-- Editör -->
         <div class="editor-workspace" id="editorWorkspace">
-            <div class="canvas-container">
+            <div class="canvas-container" id="canvasContainer">
                 <canvas id="editorCanvas"></canvas>
+                <div class="loading-screen" id="loadingScreen" aria-hidden="true">
+                    <div class="spinner" role="status" aria-hidden="true"></div>
+                    <div style="color: var(--accent); font-weight:700;">Yapay Zeka Nesneyi Tarıyor...</div>
+                    <div style="color: var(--sub); font-size: 13px; max-width: 280px;">Otomatik arka plan temizleme uygulanıyor. Lütfen bekleyin — işlem birkaç saniye sürebilir.</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ALT PANEL -->
     <div class="bottom-panel">
         <div class="sliders-grid">
             <div class="slider-group">
-                <label>🎯 Temizleme Gücü</label>
-                <input type="range" id="tolerance" min="5" max="80" value="30">
+                <label>🎯 Temizleme</label>
+                <input type="range" id="tolerance" min="5" max="120" value="30">
             </div>
             <div class="slider-group">
                 <label>☀️ Parlaklık</label>
@@ -247,23 +304,45 @@
         </div>
 
         <div class="btn-group">
-            <button class="magic-btn" id="magicBtn" onclick="autoRemoveBackground()" disabled>🪄 Sihirli Temizle</button>
-            <button class="save-btn" id="saveBtn" onclick="savePNG()" disabled>PNG Kaydet</button>
+            <button class="magic-btn" id="magicBtn" onclick="autoRemoveBackground();" disabled>🪄 Sihirli Temizle</button>
+            <button class="save-btn" id="saveBtn" onclick="savePNG();" disabled>PNG Kaydet</button>
+            <button class="oneclick-btn" id="oneClickBtn" onclick="oneClickDownload();" disabled>⬇️ Tek Tıkla PNG İndir</button>
         </div>
+    </div>
+
+    <div class="demo-banner" id="demoBanner" style="display:none">
+        Demo: <a id="demoLink" href="#" target="_blank" style="color:white; text-decoration:underline; margin-left:8px;">Aç</a>
     </div>
 
     <script>
         const canvas = document.getElementById('editorCanvas');
         const ctx = canvas.getContext('2d');
-        
+
+        const loadingScreen = document.getElementById('loadingScreen');
+        const uploadPanel = document.getElementById('uploadPanel');
+        const editorWorkspace = document.getElementById('editorWorkspace');
+        const demoBanner = document.getElementById('demoBanner');
+        const demoLink = document.getElementById('demoLink');
+
         let loadedImage = new Image();
         let historyStack = [];
         let historyIndex = -1;
+
+        function showLoading(show) {
+            if (show) {
+                loadingScreen.classList.add('active');
+                loadingScreen.setAttribute('aria-hidden', 'false');
+            } else {
+                loadingScreen.classList.remove('active');
+                loadingScreen.setAttribute('aria-hidden', 'true');
+            }
+        }
 
         function loadImage(event) {
             const file = event.target.files[0];
             if (!file) return;
 
+            showLoading(true);
             const reader = new FileReader();
             reader.onload = function(e) {
                 loadedImage.onload = function() {
@@ -274,24 +353,32 @@
 
                     if (w > maxW || h > maxH) {
                         const ratio = Math.min(maxW / w, maxH / h);
-                        w = w * ratio;
-                        h = h * ratio;
+                        w = Math.round(w * ratio);
+                        h = Math.round(h * ratio);
                     }
                     canvas.width = w;
                     canvas.height = h;
 
+                    // Temiz canvas ve resmi çiz
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(loadedImage, 0, 0, canvas.width, canvas.height);
 
-                    document.getElementById('uploadPanel').style.display = 'none';
-                    // DÜZELTME: Doğru id ile editor workspace aktif yapılıyor
-                    document.getElementById('editorWorkspace').classList.add('active');
+                    uploadPanel.style.display = 'none';
+                    editorWorkspace.classList.add('active');
+
                     document.getElementById('magicBtn').disabled = false;
                     document.getElementById('saveBtn').disabled = false;
+                    document.getElementById('oneClickBtn').disabled = false;
 
                     historyStack = [];
                     historyIndex = -1;
                     saveState();
+
+                    // Küçük gecikme ile yükleme ekranını kapat, DOM güncellemesi için
+                    setTimeout(() => showLoading(false), 250);
+
+                    // Show demo banner with link to raw file (will be available after commit)
+                    // If the page is already hosted, we'll show link; otherwise the banner stays hidden until commit returns URL.
                 }
                 loadedImage.src = e.target.result;
             }
@@ -299,6 +386,7 @@
         }
 
         function saveState() {
+            if (canvas.width === 0 || canvas.height === 0) return;
             if (historyIndex < historyStack.length - 1) {
                 historyStack = historyStack.slice(0, historyIndex + 1);
             }
@@ -328,26 +416,25 @@
             document.getElementById('redoBtn').disabled = (historyIndex >= historyStack.length - 1);
         }
 
-        // ===================== AKILLI RENK ALGINALAN ARKA PLAN SİLME ALGORİTMASI =====================
+        // ===================== AKILLI RENK ALGILAMA ARKA PLAN SİLME =====================
         function autoRemoveBackground() {
+            if (canvas.width === 0 || canvas.height === 0) return;
             const tolerance = parseInt(document.getElementById('tolerance').value);
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
             const width = canvas.width;
             const height = canvas.height;
 
-            // Köşelerdeki baskın renk piksellerini referans alıyoruz (Sol üst, sağ üst, sol alt, sağ alt)
+            // Köşe piksellerinin ortalamasını al (daha güvenilir sonuç için birkaç piksel)
             const corners = [
-                getPixelColor(data, 0, 0, width),
-                getPixelColor(data, width - 1, 0, width),
-                getPixelColor(data, 0, height - 1, width),
-                getPixelColor(data, width - 1, height - 1, width)
+                sampleCornerAvg(data, 0, 0, width, height),
+                sampleCornerAvg(data, width - 1, 0, width, height),
+                sampleCornerAvg(data, 0, height - 1, width, height),
+                sampleCornerAvg(data, width - 1, height - 1, width, height)
             ];
 
-            // Tüm pikselleri tara, köşelerdeki renklere benzeyenleri transparan yap
             for (let i = 0; i < data.length; i += 4) {
-                // Eğer zaten şeffafsa geç
-                if (data[i + 3] === 0) continue;
+                if (data[i + 3] === 0) continue; // zaten şeffaf
 
                 const r = data[i];
                 const g = data[i + 1];
@@ -369,17 +456,74 @@
                 }
 
                 if (matchFound) {
-                    data[i + 3] = 0; // Pikseli tamamen şeffaf yap (PNG katmanı)
+                    data[i + 3] = 0; // tamamen şeffaf
                 }
             }
 
+            // Hafif bir alpha feather (kenar yumuşatma) uygula
+            featherAlpha(imgData, Math.max(1, Math.round(Math.min(canvas.width, canvas.height) / 200)));
+
             ctx.putImageData(imgData, 0, 0);
-            saveState(); // Yapılan işlemi geçmişe kaydet
+            saveState();
         }
 
-        function getPixelColor(data, x, y, width) {
-            const index = (y * width + x) * 4;
-            return { r: data[index], g: data[index + 1], b: data[index + 2] };
+        // Köşe ortalaması (3x3 örnek)
+        function sampleCornerAvg(data, x, y, width, height) {
+            let sum = { r:0, g:0, b:0, count:0 };
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    const nx = Math.min(Math.max(x + dx, 0), width - 1);
+                    const ny = Math.min(Math.max(y + dy, 0), height - 1);
+                    const idx = (ny * width + nx) * 4;
+                    sum.r += data[idx];
+                    sum.g += data[idx + 1];
+                    sum.b += data[idx + 2];
+                    sum.count++;
+                }
+            }
+            return { r: Math.round(sum.r / sum.count), g: Math.round(sum.g / sum.count), b: Math.round(sum.b / sum.count) };
+        }
+
+        // Basit kutu filtresiyle alpha blur (feather). Küçük radius önerilir.
+        function featherAlpha(imgData, radius) {
+            if (radius <= 0) return;
+            const w = imgData.width;
+            const h = imgData.height;
+            const src = new Uint8ClampedArray(imgData.data);
+            const dst = imgData.data;
+
+            // Yatay geçiş
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    let sum = 0, count = 0;
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const nx = x + dx;
+                        if (nx < 0 || nx >= w) continue;
+                        const idx = (y * w + nx) * 4 + 3;
+                        sum += src[idx];
+                        count++;
+                    }
+                    const idxDst = (y * w + x) * 4 + 3;
+                    dst[idxDst] = Math.round(sum / count);
+                }
+            }
+
+            // Dikey geçiş (geçici kopya)
+            const tmp = new Uint8ClampedArray(dst);
+            for (let x = 0; x < w; x++) {
+                for (let y = 0; y < h; y++) {
+                    let sum = 0, count = 0;
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        const ny = y + dy;
+                        if (ny < 0 || ny >= h) continue;
+                        const idx = (ny * w + x) * 4 + 3;
+                        sum += tmp[idx];
+                        count++;
+                    }
+                    const idxDst = (y * w + x) * 4 + 3;
+                    dst[idxDst] = Math.round(sum / count);
+                }
+            }
         }
 
         function updateFilters() {
@@ -391,9 +535,9 @@
             canvas.style.opacity = o;
         }
 
-        // ===================== CAM GİBİ BOMLOŞ PNG KAYDETME =====================
-        function savePNG() {
-            if (historyStack.length === 0) return;
+        // ===================== PNG KAYDETME =====================
+        function savePNG(filename = 'clean_image.png') {
+            if (canvas.width === 0 || canvas.height === 0) return;
 
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -404,16 +548,74 @@
             const c = document.getElementById('contrast').value;
             const o = document.getElementById('opacity').value / 100;
 
-            // Canvas'ın içerik verisini filtreleyerek yeni bir canvas'a çiziyoruz
+            // Filtreleri uygula ve çiz
             tempCtx.filter = `brightness(${b}%) contrast(${c}%)`;
             tempCtx.globalAlpha = o;
+            // Arka planın şeffaf kalması için önce temiz bir alpha canvas
+            tempCtx.clearRect(0,0,tempCanvas.width,tempCanvas.height);
             tempCtx.drawImage(canvas, 0, 0);
 
+            // İndirme başlat
             const link = document.createElement('a');
-            link.download = 'sad_mod_clean.png';
+            link.download = filename;
             link.href = tempCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
             link.click();
+            link.remove();
         }
+
+        // ===================== TEK TIK İŞLEMİ =====================
+        function oneClickDownload() {
+            if (canvas.width === 0 || canvas.height === 0) return;
+
+            // Butonları devre dışı bırak, yükleme göster
+            setButtonsDisabled(true);
+            showLoading(true);
+
+            // Küçük gecikme veriyoruz ki loading UI görünür olsun
+            setTimeout(() => {
+                try {
+                    // Otomatik temizleme -> kaydet
+                    autoRemoveBackground();
+                    // Kaydederken dosya adı zaman damgası ekleyelim
+                    const name = `ai_clean_${Date.now()}.png`;
+                    savePNG(name);
+                } catch (err) {
+                    console.error('One-click işleminde hata:', err);
+                    alert('İşlem sırasında hata oluştu. Konsolu kontrol et.');
+                } finally {
+                    // UI'yı geri al
+                    showLoading(false);
+                    setButtonsDisabled(false);
+                }
+            }, 80);
+        }
+
+        function setButtonsDisabled(disabled) {
+            document.getElementById('magicBtn').disabled = disabled;
+            document.getElementById('saveBtn').disabled = disabled;
+            document.getElementById('oneClickBtn').disabled = disabled;
+            document.getElementById('undoBtn').disabled = disabled || (historyIndex <= 0);
+            document.getElementById('redoBtn').disabled = disabled || (historyIndex >= historyStack.length - 1);
+        }
+
+        // Kısayol: Enter ile tek tık çalıştırma
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('oneClickBtn').disabled) {
+                oneClickDownload();
+            }
+        });
+
+        // Eğer dosya repoya commitlendikten sonra raw URL verilirse demo banner göster
+        // Bu fonksiyon dışarıdan çağrılabilir (örn. committen sonra burada çağr).
+        function setDemoUrl(url) {
+            if (!url) return;
+            demoLink.href = url;
+            demoBanner.style.display = 'block';
+        }
+
+        // Expose setDemoUrl globally so handler after commit can call it
+        window.setDemoUrl = setDemoUrl;
     </script>
 </body>
 </html>
