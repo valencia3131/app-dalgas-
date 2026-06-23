@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TTDownloader PRO</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- REELS AKIŞI -->
+    <div class="reels-container" id="reelsContainer">
+        <section class="video-section">
+            <div style="text-align: center; padding: 20px;">
+                <h1 style="color: #ff0050; font-size: 3rem; margin-bottom: 10px;">💀</h1>
+                <p style="letter-spacing: 2px; font-weight: bold;">TTDownloader PRO</p>
+                <p style="opacity: 0.5; font-size: 0.8rem; margin-top: 10px;">Link kopyala, akış başlasın.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- BATCH DOWNLOAD BUTONU -->
+    <button class="batch-btn" onclick="batchDownload()" title="Son 3 Videoyu İndir">
+        📥
+    </button>
+
+    <!-- ALT NAVİGASYON -->
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.8); display: flex; justify-content: space-around; align-items: center; z-index: 100; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div onclick="location.reload()" style="font-size: 24px; cursor: pointer;">🏠</div>
+        <div style="font-size: 32px; color: #ff0050; cursor: pointer;">➕</div>
+        <div onclick="alert('Geçmiş için m_gecmis hafızasını kontrol edin.')" style="font-size: 24px; cursor: pointer;">🕒</div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
