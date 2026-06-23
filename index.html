@@ -1,4 +1,48 @@
 <!DOCTYPE html>
+<html>
+<head>
+    <title>Basit Koşu Oyunu</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; }
+        canvas { display: block; background: #555; }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let player = { x: 50, y: canvas.height - 150, w: 50, h: 50, speed: 0 };
+    let obstacles = [];
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Karakter
+        ctx.fillStyle = "red";
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+
+        // Engel
+        ctx.fillStyle = "white";
+        obstacles.forEach(o => {
+            o.x -= 5;
+            ctx.fillRect(o.x, o.y, o.w, o.h);
+        });
+
+        if (Math.random() < 0.02) obstacles.push({ x: canvas.width, y: canvas.height - 100, w: 30, h: 50 });
+        requestAnimationFrame(draw);
+    }
+
+    // Zıplama
+    window.addEventListener("keydown", () => { player.y -= 100; setTimeout(() => player.y += 100, 300); });
+    draw();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
